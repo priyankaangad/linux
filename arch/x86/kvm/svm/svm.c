@@ -3554,13 +3554,15 @@ static int svm_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
     	svm_exit_counts[exit_code]++;
 
     	// Print statistics every 10,000 exits
-    	if (total_svm_exits % 10000 == 0) {
+    	if (total_svm_exits % 100 == 0) {
         	printk(KERN_INFO "KVM SVM Exit Statistics (Total: %lu):\n", total_svm_exits);
         	for (int i = 0; i < 65536; i++) {
             		if (svm_exit_counts[i] > 0)
                 	printk(KERN_INFO "Exit Code %u: Count %lu\n", i, svm_exit_counts[i]);
         	}
    	 }
+	printk(KERN_INFO "svm_handle_exit: Handling exit for code %u\n", exit_code);
+
 	
 	/* SEV-ES guests must use the CR write traps to track CR registers. */
 	if (!sev_es_guest(vcpu->kvm)) {
