@@ -115,6 +115,10 @@ module_param(enable_apicv, bool, 0444);
 bool __read_mostly enable_ipiv = true;
 module_param(enable_ipiv, bool, 0444);
 
+static unsigned long vmx_exit_counts[65536] = {0}; // Counter for each exit type
+static unsigned long total_vmx_exits = 0;          // Total number of exits
+
+
 /*
  * If nested=1, nested virtualization is supported, i.e., guests may use
  * VMX and be a hypervisor for its own guests. If nested=0, guests may not
@@ -6454,6 +6458,21 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	union vmx_exit_reason exit_reason = vmx->exit_reason;
 	u32 vectoring_info = vmx->idt_vectoring_info;
 	u16 exit_handler_index;
+
+	// Increment counters
+	total_vmx_exits++;
+	vmx_exit_counts[exit_reason.basic]++;
+
+	printk(KERN_INFO "svm_handle_exit: exit_reason %u\n", exit_reason);
+	// Log statistics every 100 exits
+	if (total_vmx_exits % 100 == 0) {
+		printk(KERN_INFO "KVM VMX Exit Statistics (Total: %lu):\n", total_vmx_exits);
+	        for (int i = 0; i < 65536; i++) {
+	            if (vmx_exit_counts[i] > 0) {
+	                printk(KERN_INFO "Exit Code %u: Count %lu\n", i, vmx_exit_counts[i]);
+	            }
+		}
+	}
 
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
