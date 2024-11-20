@@ -69,6 +69,9 @@ MODULE_DEVICE_TABLE(x86cpu, svm_cpu_id);
 
 static bool erratum_383_found __read_mostly;
 
+static unsigned long svm_exit_counts[65536]; // Count for each exit code
+static unsigned long total_svm_exits = 0;    // Total exit count
+
 u32 msrpm_offsets[MSRPM_OFFSETS] __read_mostly;
 
 /*
@@ -3546,6 +3549,19 @@ static int svm_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	struct kvm_run *kvm_run = vcpu->run;
 	u32 exit_code = svm->vmcb->control.exit_code;
 
+	// Increment counters for exit statistics
+    	total_svm_exits++;
+    	svm_exit_counts[exit_code]++;
+
+    	// Print statistics every 10,000 exits
+    	if (total_svm_exits % 10000 == 0) {
+        	printk(KERN_INFO "KVM SVM Exit Statistics (Total: %lu):\n", total_svm_exits);
+        	for (int i = 0; i < 65536; i++) {
+            		if (svm_exit_counts[i] > 0)
+                	printk(KERN_INFO "Exit Code %u: Count %lu\n", i, svm_exit_counts[i]);
+        	}
+   	 }
+	
 	/* SEV-ES guests must use the CR write traps to track CR registers. */
 	if (!sev_es_guest(vcpu->kvm)) {
 		if (!svm_is_intercept(svm, INTERCEPT_CR0_WRITE))
