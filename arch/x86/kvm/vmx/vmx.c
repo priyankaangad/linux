@@ -6465,7 +6465,7 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 
 	//printk(KERN_INFO "svm_handle_exit: exit_reason %u\n", exit_reason);
 	// Log statistics every 100 exits
-	if (total_vmx_exits % 100 == 0) {
+	if (total_vmx_exits % 1000 == 0) {
 		printk(KERN_INFO "KVM VMX Exit Statistics (Total: %lu):\n", total_vmx_exits);
 	        for (int i = 0; i < 65536; i++) {
 	            if (vmx_exit_counts[i] > 0) {
