@@ -118,6 +118,21 @@ module_param(enable_ipiv, bool, 0444);
 static unsigned long vmx_exit_counts[65536] = {0}; // Counter for each exit type
 static unsigned long total_vmx_exits = 0;          // Total number of exits
 
+static const char *vmx_exit_names[] = {
+    [0] = "Exception or NMI",
+    [1] = "External Interrupt",
+    [7] = "Pending Debug Exceptions",
+    [10] = "Task Switch",
+    [28] = "CPUID",
+    [30] = "I/O Instruction",
+    [31] = "RDMSR",
+    [32] = "WRMSR",
+    [48] = "HLT",
+    [49] = "INVLPG",
+    [54] = "INVPCID",
+};
+
+
 
 /*
  * If nested=1, nested virtualization is supported, i.e., guests may use
@@ -6466,13 +6481,17 @@ static int __vmx_handle_exit(struct kvm_vcpu *vcpu, fastpath_t exit_fastpath)
 	//printk(KERN_INFO "svm_handle_exit: exit_reason %u\n", exit_reason);
 	// Log statistics every 100 exits
 	if (total_vmx_exits % 1000 == 0) {
-		printk(KERN_INFO "KVM VMX Exit Statistics (Total: %lu):\n", total_vmx_exits);
-	        for (int i = 0; i < 65536; i++) {
-	            if (vmx_exit_counts[i] > 0) {
-	                printk(KERN_INFO "Exit Code %u: Count %lu\n", i, vmx_exit_counts[i]);
-	            }
-		}
+	    printk(KERN_INFO "KVM VMX Exit Statistics (Total: %lu):\n", total_vmx_exits);
+	    for (int i = 0; i < 65536; i++) {
+	        if (vmx_exit_counts[i] > 0) {
+	            const char *exit_name = (i < sizeof(vmx_exit_names) / sizeof(char*) && vmx_exit_names[i])
+	                                    ? vmx_exit_names[i]
+	                                    : "Unknown";
+	            printk(KERN_INFO "Exit Code %u (%s): Count %lu\n", i, exit_name, vmx_exit_counts[i]);
+	        }
+	    }
 	}
+
 
 	/*
 	 * Flush logged GPAs PML buffer, this will make dirty_bitmap more
